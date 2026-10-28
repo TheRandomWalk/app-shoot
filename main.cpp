@@ -32,8 +32,8 @@ struct WindowInfo { HWND handle; std::wstring title; std::wstring program; DWORD
 
 static void printUsage() {
     std::wcerr << L"Usage:\n"
-        L"  window-shot --list\n"
-        L"  window-shot (--index N | --pid PID | --title TEXT) [--size WIDTHxHEIGHT] [--out file.png]\n\n"
+        L"  AppShoot --list\n"
+        L"  AppShoot (--index N | --pid PID | --title TEXT) [--size WIDTHxHEIGHT] [--out file.png]\n\n"
         L"--index selects a row from --list; --pid accepts a PID or numeric substring;\n"
         L"--title accepts a case-insensitive partial title.\n"
         L"--size sets the complete outer window dimensions before capturing it.\n";
@@ -60,9 +60,16 @@ static bool isCandidate(HWND hwnd) {
 }
 
 static std::vector<WindowInfo> windows() {
+    const DWORD currentProcessId = GetCurrentProcessId();
+    const HWND consoleWindow = GetConsoleWindow();
+    // Windows Terminal owns the pseudoconsole window; exclude only its hosting window.
+    const HWND consoleHostWindow = consoleWindow ? GetAncestor(consoleWindow, GA_ROOTOWNER) : nullptr;
     std::vector<WindowInfo> result;
     std::function<void(HWND)> addWindow = [&](HWND hwnd) {
-        if (!isCandidate(hwnd)) return;
+        if (hwnd == consoleWindow || hwnd == consoleHostWindow || !isCandidate(hwnd)) return;
+        DWORD pid{};
+        GetWindowThreadProcessId(hwnd, &pid);
+        if (pid == currentProcessId) return;
         if (std::any_of(result.begin(), result.end(), [hwnd](const WindowInfo& window) {
                 return window.handle == hwnd;
             })) return;
@@ -70,8 +77,6 @@ static std::vector<WindowInfo> windows() {
         const int titleLength = GetWindowTextW(hwnd, titleBuffer, static_cast<int>(std::size(titleBuffer)));
         if (titleLength <= 0) return;
         std::wstring title(titleBuffer, titleLength);
-        DWORD pid{};
-        GetWindowThreadProcessId(hwnd, &pid);
         std::wstring program = L"unknown";
         HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
         if (process) {

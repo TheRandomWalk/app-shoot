@@ -1,14 +1,14 @@
-# App-Shot
+# App-Shoot
 
-App-Shot is a command-line tool for Windows that captures an open application's window and saves it as a PNG. It can resize the window before capturing it to produce images with specific dimensions, useful for documentation, reports, or interface comparisons.
+App-Shoot is a command-line tool for Windows that captures an open application's window and saves it as a PNG. It can resize the window before capturing it to produce images with specific dimensions, useful for documentation, reports, or interface comparisons.
 
-The application lays out its content at the new size before capture: **the image is not scaled afterward**. App-Shot captures a single window, not the entire desktop or a video.
+The application lays out its content at the new size before capture: **the image is not scaled afterward**. App-Shoot captures a single window, not the entire desktop or a video.
 
-The executable is named `window-shot.exe`.
+The executable is named `AppShoot.exe`.
 
 ## Features
 
-- List visible windows with their index, PID, executable name, and title.
+- List visible windows with their index, PID, executable name, and title, excluding App-Shoot's own windows and the console or terminal window running it.
 - Select a window by index, PID, or part of its title.
 - Capture it at its current size or request an output size in pixels.
 - Save the result as a PNG file, defaulting to `screenshot.png`.
@@ -27,7 +27,7 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-With the Visual Studio generator, the executable is created at `build\Release\window-shot.exe`. Capture uses Win32, GDI+, GDI, and DWM; no third-party libraries are required.
+With the Visual Studio generator, the executable is created at `build\Release\AppShoot.exe`. Capture uses Win32, GDI+, GDI, and DWM; no third-party libraries are required.
 
 ## Usage
 
@@ -35,29 +35,29 @@ First, open the application whose window you want to capture.
 
 ```powershell
 # List available windows
-.\build\Release\window-shot.exe --list
+.\build\Release\AppShoot.exe --list
 
 # Capture a window by part of its title, without resizing it
-.\build\Release\window-shot.exe --title "My application" --out capture.png
+.\build\Release\AppShoot.exe --title "My application" --out capture.png
 
 # Resize the window to produce a 1280 × 720 pixel PNG
-.\build\Release\window-shot.exe --title "My application" --size 1280x720 --out capture-720p.png
+.\build\Release\AppShoot.exe --title "My application" --size 1280x720 --out capture-720p.png
 
 # Select by the index shown in --list
-.\build\Release\window-shot.exe --index 2 --out window.png
+.\build\Release\AppShoot.exe --index 2 --out window.png
 
 # Select by PID; replace 1234 with the window's PID
-.\build\Release\window-shot.exe --pid 1234 --out window.png
+.\build\Release\AppShoot.exe --pid 1234 --out window.png
 
 # Combine PID and title to distinguish windows belonging to the same process
-.\build\Release\window-shot.exe --pid 1234 --title "Document" --out document.png
+.\build\Release\AppShoot.exe --pid 1234 --title "Document" --out document.png
 ```
 
 ### Options
 
 | Option | Behavior |
 | --- | --- |
-| `--list` | Lists visible windows with a title, excluding child and tool windows. Does not capture an image. |
+| `--list` | Lists visible windows with a title, excluding child and tool windows, App-Shoot's own windows, and its console or terminal host window. Does not capture an image. |
 | `--index N` | Selects a row from the list, starting at 1. The list is sorted by executable name, title, and PID; indices may change when windows are opened or closed. Takes precedence over other selectors. |
 | `--pid PID` | Matches a full PID or a numeric substring of the PID. Can be combined with `--title`. |
 | `--title TEXT` | Matches part of the title, case-insensitively. |
@@ -65,6 +65,8 @@ First, open the application whose window you want to capture.
 | `--out PATH` | Output PNG path. If omitted, writes `screenshot.png` in the working directory. Use quotes if the path contains spaces. |
 
 A selector is required unless you use `--list`. If there are no matches or multiple matches, the tool displays the relevant windows and exits without capturing; use a more specific selector.
+
+The displayed lists and all selectors use the same filtered set of windows. App-Shoot and its console or terminal host window cannot be selected; other console and terminal windows remain available.
 
 ## Capture size and behavior
 
